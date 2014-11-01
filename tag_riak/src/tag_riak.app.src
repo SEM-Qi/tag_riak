@@ -1,0 +1,12 @@
+{application, tag_riak,
+ [
+  {description, "DB interface between server and Riak"},
+  {vsn, "0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { tag_riak, []}},
+  {env, []}
+ ]}.
