@@ -118,7 +118,8 @@ getTagBySec(Second, Tag, SocketPid) ->
           {integer_index, "timestamp"}, %% index name
           testoldTimeStamp(Second), testoldTimeStamp(Second-1) %% origin timestamp should eventually have some logic attached
         ),
-  TagObjs = [fun() -> {ok, Obj} = riakc_pb_socket:get(SocketPid, Tag, Key), Obj end  || Key <- Keys],
-  Allofthecotags = lists:foldl(fun(Object, AllCotags) -> {Cotags, _} = riakc_obj:get_value(Object), Cotags ++ AllCotags end, [], TagObjs),
-  {length(Keys), Allofthecotags, [<<"dummy tweet text">>]}.
 
+  TagObjs = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, Tag, Key), Obj end, Keys),
+  Allofthecotags = lists:foldl(fun(Object, AllCotags) -> Binary = riakc_obj:get_value(Object), 
+                    {Cotags, _} = binary_to_term(Binary), Cotags ++ AllCotags end, [], TagObjs).
+  {length(Keys), Allofthecotags, [<<"dummy tweet text">>]}.
