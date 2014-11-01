@@ -121,5 +121,5 @@ getTagBySec(Second, Tag, SocketPid) ->
 
   TagObjs = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, Tag, Key), Obj end, Keys),
   Allofthecotags = lists:foldl(fun(Object, AllCotags) -> Binary = riakc_obj:get_value(Object), 
-                    {Cotags, _} = binary_to_term(Binary), Cotags ++ AllCotags end, [], TagObjs).
+                    {Cotags, _} = binary_to_term(Binary), Cotags ++ AllCotags end, [], TagObjs),
   {length(Keys), Allofthecotags, [<<"dummy tweet text">>]}.
