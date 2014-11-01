@@ -30,16 +30,16 @@ handle_call(update_taglist, _From, SocketPid) ->
 	{reply, Taglist, SocketPid};
 
 handle_call({gettag, Tag}, _From, SocketPid) ->
-  {Numtags1, Cotags1, TweetText1} = getTagBySec(1, Tag, SocketPID),
-  {Numtags2, Cotags2, TweetText2} = getTagBySec(2, Tag, SocketPID),
-  {Numtags3, Cotags3, TweetText3} = getTagBySec(3, Tag, SocketPID),
-  {Numtags4, Cotags4, TweetText4} = getTagBySec(4, Tag, SocketPID),
-  {Numtags5, Cotags5, TweetText5} = getTagBySec(5, Tag, SocketPID),
-  {Numtags6, Cotags6, TweetText6} = getTagBySec(6, Tag, SocketPID),
-  {Numtags7, Cotags7, TweetText7} = getTagBySec(7, Tag, SocketPID),
-  {Numtags8, Cotags8, TweetText8} = getTagBySec(8, Tag, SocketPID),
-  {Numtags9, Cotags9, TweetText9} = getTagBySec(9, Tag, SocketPID),
-  {Numtags10, Cotags10, TweetText10} = getTagBySec(10, Tag, SocketPID),
+  {Numtags1, Cotags1, TweetText1} = getTagBySec(1, Tag, SocketPid),
+  {Numtags2, Cotags2, TweetText2} = getTagBySec(2, Tag, SocketPid),
+  {Numtags3, Cotags3, TweetText3} = getTagBySec(3, Tag, SocketPid),
+  {Numtags4, Cotags4, TweetText4} = getTagBySec(4, Tag, SocketPid),
+  {Numtags5, Cotags5, TweetText5} = getTagBySec(5, Tag, SocketPid),
+  {Numtags6, Cotags6, TweetText6} = getTagBySec(6, Tag, SocketPid),
+  {Numtags7, Cotags7, TweetText7} = getTagBySec(7, Tag, SocketPid),
+  {Numtags8, Cotags8, TweetText8} = getTagBySec(8, Tag, SocketPid),
+  {Numtags9, Cotags9, TweetText9} = getTagBySec(9, Tag, SocketPid),
+  {Numtags10, Cotags10, TweetText10} = getTagBySec(10, Tag, SocketPid),
   AllCotags = Cotags10 ++ Cotags1 ++ Cotags2 ++ 
               Cotags3 ++ Cotags4 ++ Cotags5 ++ 
               Cotags6 ++ Cotags7 ++ Cotags8 ++ Cotags9,
@@ -111,9 +111,9 @@ oldTimeStamp(Second) ->
   {Mega, Secs, Micro} = erlang:now(),
   Mega*1000*1000*1000*1000 + ((Secs - (Second *120)) * 1000 * 1000) + Micro.
 
-getTagBySec(Second, Tag, SocketPID) ->
+getTagBySec(Second, Tag, SocketPid) ->
   {ok, {_,Keys,_,_}} = riakc_pb_socket:get_index_range(
-          SocketPID,
+          SocketPid,
           Tag, %% bucket name
           {integer_index, "timestamp"}, %% index name
           testoldTimeStamp(Second), testoldTimeStamp(Second-1) %% origin timestamp should eventually have some logic attached
