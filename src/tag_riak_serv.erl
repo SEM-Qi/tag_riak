@@ -112,14 +112,18 @@ oldTimeStamp(Second) ->
   Mega*1000*1000*1000*1000 + ((Secs - (Second *120)) * 1000 * 1000) + Micro.
 
 getTagBySec(Second, Tag, SocketPid) ->
-  {ok, {_,Keys,_,_}} = riakc_pb_socket:get_index_range(
-          SocketPid,
-          Tag, %% bucket name
-          {integer_index, "timestamp"}, %% index name
-          testoldTimeStamp(Second), testoldTimeStamp(Second-1) %% origin timestamp should eventually have some logic attached
-        ),
+  case riakc_pb_socket:get_index_range(
+            SocketPid,
+            Tag, %% bucket name
+            {integer_index, "timestamp"}, %% index name
+            testoldTimeStamp(Second), testoldTimeStamp(Second-1) %% origin timestamp should eventually have some logic attached
+          ) of
+    {ok, {_,Keys,_,_}} ->
+      TagObjs = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, Tag, Key), Obj end, Keys),
+      Allofthecotags = lists:foldl(fun(Object, AllCotags) -> Binary = riakc_obj:get_value(Object), 
+                        {Cotags, _} = binary_to_term(Binary), Cotags ++ AllCotags end, [], TagObjs),
+      {length(Keys), Allofthecotags, [<<"dummy tweet text">>]};
+    {ok, {_,[],_,_}} ->
+      {0, [], []}
+  end.
 
-  TagObjs = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, Tag, Key), Obj end, Keys),
-  Allofthecotags = lists:foldl(fun(Object, AllCotags) -> Binary = riakc_obj:get_value(Object), 
-                    {Cotags, _} = binary_to_term(Binary), Cotags ++ AllCotags end, [], TagObjs),
-  {length(Keys), Allofthecotags, [<<"dummy tweet text">>]}.
