@@ -1,9 +1,8 @@
 -module(tag_riak_serv).
 -behaviour(gen_server).
--compile(export_all).
-% -export([start/4, start_link/4, run/2, sync_queue/2, async_queue/2, stop/1]).
-% -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-%          code_change/3, terminate/2]).
+-export([start_link/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+          code_change/3, terminate/2]).
 
 
 %Where Pid is the pid of the requesting process (hopefully)
@@ -103,13 +102,15 @@ code_change(_OldVsn, State, _Extra) ->
 terminate(_Reason, _State) ->
     ok.
 
-%Call - Start a server under tag_riak_sup supervision
-
+%% temporary timestamp function
 testoldTimeStamp(Second) ->
   1414506936992434 - ((Second * 120) * 1000000).
-oldTimeStamp(Second) ->
-  {Mega, Secs, Micro} = erlang:now(),
-  Mega*1000*1000*1000*1000 + ((Secs - (Second *120)) * 1000 * 1000) + Micro.
+
+%% When miner is live, this is the correct timestamp function
+
+% oldTimeStamp(Second) ->
+%   {Mega, Secs, Micro} = erlang:now(),
+%   Mega*1000*1000*1000*1000 + ((Secs - (Second *120)) * 1000 * 1000) + Micro.
 
 getTagBySec(Second, Tag, SocketPid) ->
   case riakc_pb_socket:get_index_range(

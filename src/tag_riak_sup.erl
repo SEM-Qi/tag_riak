@@ -1,6 +1,5 @@
 -module(tag_riak_sup).
--compile(export_all).
-% -export([start_link/3, init/1]).
+-export([start_link/0, init/1]).
 -behaviour(supervisor).
 
 

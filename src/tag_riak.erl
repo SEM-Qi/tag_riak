@@ -1,8 +1,10 @@
 -module(tag_riak).
 -behaviour(application).
--compile(export_all).
-% -export([start/2, stop/1, start_pool/3,
-%          run/2, sync_queue/2, async_queue/2, stop_pool/1]).
+%% Application callbacks
+-export([start/2, stop/1]).
+%% Interface callbacks
+-export([connect/0, tag_attack/2, update_taglist/1, getreply/0, close_server/1]).
+% -export([get_player_info/1, new_player/1, update_player_info/1]).
 
 %% ===================================================================
 %% Application callbacks
