@@ -16,7 +16,7 @@ init([]) ->
 %DO Call/Cast Handling here
 
 handle_call(update_taglist, _From, SocketPid) ->
-	Taglist = jiffy:encode([<<"theifs">>,<<"thekilling">>,<<"them">>,
+	Taglist = jiffy:encode({[{<<"tags">>,[<<"theifs">>,<<"thekilling">>,<<"them">>,
      <<"themasterstoryteller">>,<<"themselves">>,
      <<"thenextgreatbaker">>,<<"theprofit">>,<<"therapydisco">>,
      <<"theseStreets">>,<<"theshatteredmind">>,
@@ -24,7 +24,7 @@ handle_call(update_taglist, _From, SocketPid) ->
      <<"thestrain">>,<<"thesuitelife">>,<<"thewaylifegoes">>,
      <<"thework">>,<<"theythinktheyre21">>,<<"theywack">>,
      <<"thingsToDoBeforeIDie">>,<<"thingstodobeforeidie">>,
-     <<"thisisasadmoment">>,<<"thisisntover">>,<<"porn">>]),
+     <<"thisisasadmoment">>,<<"thisisntover">>,<<"porn">>]}]}),
 	% {ok, Taglist} = riakc_pb_socket:list_buckets(Pid),
 	{reply, Taglist, SocketPid};
 

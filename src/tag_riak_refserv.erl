@@ -1,9 +1,8 @@
 -module(tag_riak_refserv).
 -behaviour(gen_server).
--compile(export_all).
-% -export([start/4, start_link/4, run/2, sync_queue/2, async_queue/2, stop/1]).
-% -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-%          code_change/3, terminate/2]).
+-export([start_link/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+         code_change/3, terminate/2, connect/0]).
 
 
 start_link() ->
@@ -19,10 +18,7 @@ connect() ->
 	{ok, Pid} = supervisor:start_child(tag_riak_sup, []),
 	Pid.
 
-update_taglist() ->
-	ok.
-
-handle_call(reply, _From, State) ->
+handle_call(_Msg, _From, State) ->
 	io:format("ref server started"),
 	Reply = "blam",
     {reply, Reply, State}.
