@@ -31,7 +31,7 @@ handle_call({gettag, Tag}, _From, SocketPid) ->
   AllKeys = lists:reverse(lists:sort(Keys)),
   {NewKeys,_} = lists:split(20, AllKeys),
   Objects = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, <<"tags">>, Key), Obj end, NewKeys),
-  Tagset = lists:map(fun(Object) -> Value = binary_to_term(riakc_obj:get_value(Object)), {ok, Tag} = dict:find(Value), Tag end, Objects),
+  Tagset = lists:map(fun(Object) -> Value = binary_to_term(riakc_obj:get_value(Object)), case dict:find(Tag, Value) of {ok, Tagged} -> Tagged; error -> {0, sets:new(),sets:new()} end end, Objects),
   {Distribution, Cotags} = loopThrough(Tagset, [], sets:new()),
   Response = jiffy:encode({[{<<"tag">>, Tag},
   {<<"cotags">>, Cotags},
@@ -115,3 +115,5 @@ loopThrough(Tagset, L, OldCotags) ->
   L2 = [{[{<<"numtags">>, Num + Num2}, {<<"tweets">>, sets:to_list(sets:union([Tweets, Tweets2]))}]}|L],
   NewCotags = sets:union([Cotags, Cotags2, OldCotags]),
   loopThrough(OldKeys, L2, NewCotags).
+
+  % sets:to_list(sets:union([Tweets, Tweets2]))
