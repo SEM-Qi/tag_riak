@@ -17,8 +17,9 @@ init([]) ->
 
 handle_call(update_taglist, _From, SocketPid) ->
 	case riakc_pb_socket:get(SocketPid, <<"taglistbucket">>, <<"taglist">>) of
-        {ok, CurrentTaglist} ->     
-          Taglist = jiffy:encode({[{<<"tags">>, CurrentTaglist}]});
+        {ok, CurrentTaglist} -> 
+          FinalTaglist = binary_to_term(riakc_obj:get_value(CurrentTaglist)),  
+          Taglist = jiffy:encode({[{<<"tags">>, FinalTaglist}]});
         {error,_} ->
           Taglist = jiffy:encode({[{<<"tags">>, <<"Bad List">>}]})
   end,
@@ -107,10 +108,10 @@ terminate(_Reason, _State) ->
 %       {length(Keys), Allofthecotags, [<<"dummy tweet text">>]}
 %   end.
 
-loopThrough([], L, Cotags) -> {L, Cotags};
+loopThrough([], L, Cotags) -> {L, sets:to_list(Cotags)};
 loopThrough(Tagset, L, OldCotags) ->
   {NewKeys,OldKeys} = lists:split(2, Tagset),
   [{Num, Cotags, Tweets}, {Num2, Cotags2, Tweets2}] = NewKeys,
-  L2 = [{[{<<"numtags">>, Num + Num2}, {<<"tweets">>, sets:union([Tweets, Tweets2])}]}|L],
+  L2 = [{[{<<"numtags">>, Num + Num2}, {<<"tweets">>, sets:to_list(sets:union([Tweets, Tweets2]))}]}|L],
   NewCotags = sets:union([Cotags, Cotags2, OldCotags]),
   loopThrough(OldKeys, L2, NewCotags).
