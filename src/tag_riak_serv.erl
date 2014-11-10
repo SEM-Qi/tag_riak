@@ -10,7 +10,7 @@ start_link() ->
   gen_server:start_link(?MODULE, [], []).
 
 init([]) ->
-  {ok, Pid} = riakc_pb_socket:start_link("greedo.skip.chalmers.se", 8087),
+  {ok, Pid} = riakc_pb_socket:start_link("picard.skip.chalmers.se", 8087),
   {ok, Pid}.
 
 handle_call(update_taglist, _From, SocketPid) ->
