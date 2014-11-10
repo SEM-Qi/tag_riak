@@ -21,7 +21,7 @@ init([]) ->
              worker,
              [tag_riak_refserv]},
             {tag_riak_sup,
-             {tag_riak_sup, start_link, []},  % A = Get list of connections from refServer
+             {tag_riak_sup, start_link, []},
              permanent,
              5000, 
              supervisor,

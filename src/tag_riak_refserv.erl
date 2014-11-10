@@ -10,8 +10,6 @@ start_link() ->
 
 
 init(State) ->
-	%initiate some kind of storage for connections and 
-	%either make it accessible to top super or send it (maybe start tag_riak_super from here and monitor?)
 	{ok,State}.
 
 connect() ->
@@ -34,13 +32,3 @@ code_change(_OldVsn, State, _Extra) ->
 
 terminate(_Reason, _State) ->
     ok.
-
-%Make sure the process spawned is ref'd with a monitor and stored. do same with tag riak super??
-
-% handle_info({'DOWN', Ref, process, _Pid, _}, S = #state{refs=Refs}) ->
-%     case gb_sets:is_element(Ref, Refs) of
-%         true ->
-%             handle_down_worker(Ref, S);
-%         false -> %% Not our responsibility
-%             {noreply, S}
-%     end;
