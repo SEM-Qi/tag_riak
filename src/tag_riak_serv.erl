@@ -41,7 +41,7 @@ handle_call(update_taglist, _From, SocketPid) ->
 	{reply, Taglist, SocketPid};
 
 handle_call({testpost, TestInfo}, _From, SocketPid) ->
-  TestInfo1 = jiffy:decode(TestInfo),
+  {TestInfo1} = jiffy:decode(TestInfo),
   case extract(<<"testid">>, TestInfo1) of
     {found, Val} -> 
       Obj = riakc_obj:new(<<"testpost">>,
