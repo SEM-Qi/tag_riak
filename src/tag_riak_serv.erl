@@ -1,13 +1,30 @@
 -module(tag_riak_serv).
 -behaviour(gen_server).
+
+%% ------------------------------------------------------------------
+%% API Function Exports
+%% ------------------------------------------------------------------
+
 -export([start_link/0]).
+
+%% ------------------------------------------------------------------
+%% gen_server Function Exports
+%% ------------------------------------------------------------------
+
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
           code_change/3, terminate/2]).
 
+%% ------------------------------------------------------------------
+%% API Function Definitions
+%% ------------------------------------------------------------------
 
 %Where Pid is the pid of the requesting process (hopefully)
 start_link() ->
   gen_server:start_link(?MODULE, [], []).
+
+%% ------------------------------------------------------------------
+%% gen_server Function Definitions
+%% ------------------------------------------------------------------
 
 init([]) ->
   {ok, Pid} = riakc_pb_socket:start_link("picard.skip.chalmers.se", 8087),
@@ -22,6 +39,18 @@ handle_call(update_taglist, _From, SocketPid) ->
           Taglist = jiffy:encode({[{<<"tags">>, <<"Bad List">>}]})
   end,
 	{reply, Taglist, SocketPid};
+
+handle_call({testpost, TestInfo}, _From, SocketPid) ->
+  TestInfo1 = jiffy:decode(TestInfo),
+  case extract(<<"testid">>) of
+    {found, Val} -> 
+      Obj = riakc_obj:new(<<"testpost">>,
+        Val,
+        term_to_binary(TestInfo1)),
+      Result = riakc_pb_socket:put(SocketPID, Obj);
+    not_found -> Result = bad_request
+  end, 
+  {reply, Result, SocketPid};
 
 handle_call({gettag, Tag}, _From, SocketPid) ->
   case riakc_pb_socket:get_index_range(
@@ -72,6 +101,10 @@ code_change(_OldVsn, State, _Extra) ->
 terminate(_Reason, _State) ->
     ok.
 
+%% ------------------------------------------------------------------
+%% Internal Function Definitions
+%% ------------------------------------------------------------------
+
 loopThrough([], L, Cotags) -> {L, sets:to_list(Cotags)};
 loopThrough(Tagset, L, OldCotags) ->
   {NewKeys,OldKeys} = lists:split(2, Tagset),
@@ -87,3 +120,9 @@ timeStamp() ->
 oldTimeStamp() ->
   {Mega, Secs, Micro} = erlang:now(),
   Mega*1000*1000*1000*1000 + ((Secs - 2400) * 1000 * 1000) + Micro.
+
+extract(K, L) ->
+  case lists:keyfind(K, 1, L) of
+    {_, M} -> {found, M};
+    false  -> not_found
+  end.

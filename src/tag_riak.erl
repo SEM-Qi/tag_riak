@@ -31,6 +31,9 @@ update_taglist(Pid) ->
 getreply() ->
 	gen_server:call(tag_riak_refserv, reply).
 
+test_post(Pid, Val) ->
+	gen_server:call(Pid, {testpost, Val}).
+
 % get_player_info(Player) -> 
 % 	gen_server:call(,Tag)
 
