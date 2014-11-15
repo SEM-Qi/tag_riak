@@ -42,12 +42,12 @@ handle_call(update_taglist, _From, SocketPid) ->
 
 handle_call({testpost, TestInfo}, _From, SocketPid) ->
   TestInfo1 = jiffy:decode(TestInfo),
-  case extract(<<"testid">>) of
+  case extract(<<"testid">>, TestInfo1) of
     {found, Val} -> 
       Obj = riakc_obj:new(<<"testpost">>,
         Val,
         term_to_binary(TestInfo1)),
-      Result = riakc_pb_socket:put(SocketPID, Obj);
+      Result = riakc_pb_socket:put(SocketPid, Obj);
     not_found -> Result = bad_request
   end, 
   {reply, Result, SocketPid};
