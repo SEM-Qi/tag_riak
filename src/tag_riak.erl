@@ -19,6 +19,10 @@ stop(_State) ->
 %% Interface callbacks
 %% ===================================================================
 
+%% Here is where to define externally accessible calls to the internal server. 
+%% Any functionality you want accessible must be put here
+
+
 connect() ->
 	tag_riak_refserv:connect().
 

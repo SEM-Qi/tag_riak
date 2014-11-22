@@ -26,9 +26,13 @@ start_link() ->
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
+%% Starts a link to riak, stores it in state.
 init([]) ->
   {ok, Pid} = riakc_pb_socket:start_link("picard.skip.chalmers.se", 8087),
   {ok, Pid}.
+
+%% Here is where you can add functionaility by making another handle_call function head.
+%% Remember to include the API call in tag_riak for any functionaility you want to access
 
 handle_call(update_taglist, _From, SocketPid) ->
 	case riakc_pb_socket:get(SocketPid, <<"taglistbucket">>, <<"taglist">>) of
