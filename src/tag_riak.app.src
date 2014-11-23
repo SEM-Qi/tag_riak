@@ -6,7 +6,8 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  riakc
                  ]},
   {mod, {tag_riak, []}},
   {env, []}
