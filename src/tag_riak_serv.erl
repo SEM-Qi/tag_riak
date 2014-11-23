@@ -38,9 +38,11 @@ handle_call(update_taglist, _From, SocketPid) ->
 	Taglist = case riakc_pb_socket:get(SocketPid, <<"taglistbucket">>, <<"taglist">>) of
         {ok, CurrentTaglist} -> 
           FinalTaglist = binary_to_term(riakc_obj:get_value(CurrentTaglist)),  
-          jiffy:encode({[{<<"tags">>, FinalTaglist}]});
+          Taglist1 = jiffy:encode({[{<<"tags">>, FinalTaglist}]}),
+          Taglist1;
         {error,_} ->
-          jiffy:encode({[{<<"tags">>, <<"Bad List">>}]})
+          Taglist1 = jiffy:encode({[{<<"tags">>, <<"Bad List">>}]}),
+          Taglist1
   end,
 	{reply, Taglist, SocketPid};
 
@@ -51,7 +53,8 @@ handle_call({testpost, TestInfo}, _From, SocketPid) ->
       Obj = riakc_obj:new(<<"testpost">>,
         Val,
         term_to_binary(TestInfo1)),
-      riakc_pb_socket:put(SocketPid, Obj);
+      Result1 = riakc_pb_socket:put(SocketPid, Obj),
+      Result1;
     not_found -> bad_request
   end, 
   {reply, Result, SocketPid};
@@ -70,16 +73,19 @@ handle_call({gettag, Tag}, _From, SocketPid) ->
           {NewKeys,_} = lists:split(20, AllKeys),
           Objects = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, <<"tags">>, Key), Obj end, NewKeys),
           Tagset = lists:map(fun(Object) -> Value = binary_to_term(riakc_obj:get_value(Object)), case dict:find(Tag, Value) of {ok, Tagged} -> Tagged; error -> {0, sets:new(),sets:new()} end end, Objects),
-          loopThrough(Tagset, [], sets:new());
+          {Distribution1, Cotags1} = loopThrough(Tagset, [], sets:new()),
+          {Distribution1, Cotags1};
         (length(AllKeys) >= 2) and (length(AllKeys) rem 2 =:= 0) ->
           Objects = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, <<"tags">>, Key), Obj end, AllKeys),
           Tagset = lists:map(fun(Object) -> Value = binary_to_term(riakc_obj:get_value(Object)), case dict:find(Tag, Value) of {ok, Tagged} -> Tagged; error -> {0, sets:new(),sets:new()} end end, Objects),
-          loopThrough(Tagset, [], sets:new());
+          {Distribution1, Cotags1} = loopThrough(Tagset, [], sets:new()),
+          {Distribution1, Cotags1};
         length(AllKeys) >= 2 ->
           [_|NewKeys] = AllKeys,
           Objects = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, <<"tags">>, Key), Obj end, NewKeys),
           Tagset = lists:map(fun(Object) -> Value = binary_to_term(riakc_obj:get_value(Object)), case dict:find(Tag, Value) of {ok, Tagged} -> Tagged; error -> {0, sets:new(),sets:new()} end end, Objects),
-          loopThrough(Tagset, [], sets:new());
+          {Distribution1, Cotags1} = loopThrough(Tagset, [], sets:new()),
+          {Distribution1, Cotags1};
         true ->
           {[{[{<<"numtags">>, 0}, {<<"tweets">>, ""}]}],[]}
       end;
