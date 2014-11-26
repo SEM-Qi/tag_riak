@@ -71,34 +71,52 @@ handle_call(update_taglist, _From, SocketPid) ->
 	%application:ensure_all_started(tw_data_server).
 
 handle_call({setkey, Data}, _From, SocketPid) ->
-	DataMap = jiffy:decode(Data, [return_maps]), 
-	ProfileImg = extract(<<"profile_image_url">>, TestInfo1), 
-	UserId = case extract(<<"user_id">>, TestInfo1) of			
+	Data1 = jiffy:decode(Data), 
+	ProfileImg = extract(<<"profile_image_url">>, Data1), 
+	UserId = case extract(<<"user_id">>, Data1) of			
 	 not_found ->  
 		{reply, bad_request, SocketPid};
 	true 		->
 		Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
 		if Result =:= {error, notfound} 
-				 ->     
-				 Object = riakc_obj:new(<<"users">>, term_to_binary(UserId), term_to_binary(ProfileImg)), 
-			true -> 
+				->     
+				 ValueStructure = {{auth_key, empty}, {profile_img, empty}, {screen_name, empty}},
+				 Object = riakc_obj:new(<<"users">>, term_to_binary(UserId), term_to_binary(ValueStructure)), 
+		   true -> 
 				{ok, Object} = Result,
 				User = binary_to_term(riakc_obj:get_value(Object))
 		end,
-		NewUser = riakc_obj:update_value(SocketPid, binary_to_list(AuthKey), binary_to_list(riakc_obj:get_value(Object)),
+		
+		%{{auth_key, "r12312312312312313"}, {profile_img, "http:aadasd/dsad"}, {screen_name, "durak"}}
+		
+		DeletedAuthKey = [{auth_key, Value, User}	 | lists:keydelete(auth_key, 1, User)],
+		DeletedImg 	   = [{profile_img, Value, User} | lists:keydelete(profile_img, 1, User)],
+		DeletedName    = [{screen_name, Value, User} | lists:keydelete(screen_name, 1, User)],
+		NewList 	   = DeletedImg ++ DeletedName ++ DeletedAuthKey,    
+              
+		NewUser = riakc_obj:update_value(Result, binary_to_list(NewList)),
 		RiakObj = riakc_obj:new(<<"users">>, term_to_binary(UserId), NewUser),
 		riakc_pb_socket:put(SocketPid, RiakObj),
 		{reply, binary_to_list(AuthKey), SocketPid};
 	
 	end;
-	 
+	
+	Value = {
+	{auth_key, "r12312312312312313"}, {profile_img, "http:aadasd/dsad"}, {screen_name, "durak"}
+	}
+	{_, {profile_img, Img}, _} = get_value();
+	
+	
 	%application:ensure_all_started(tw_data_server).
 
 handle_call({getuserinfo, Data}, _From, SocketPid) ->
 	DataMap = jiffy:decode(Data, [return_maps]), 
-	UserId = maps:get(<<"user_id">>, DataMap, not_found),
-	AuthKey = maps:get(<<"key">>, DataMap, not_found),
-	
+	UserId = case extract(<<"user_id">>, TestInfo1) of		
+		not_found ->  
+			{reply, bad_request, SocketPid};
+		true 		->
+			Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
+			{reply, binary_to_list(Result), SocketPid};
 	%application:ensure_all_started(tw_data_server).
 
 	
