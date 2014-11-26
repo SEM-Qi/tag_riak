@@ -28,36 +28,63 @@ start_link() ->
 
 %% Starts a link to riak, stores it in state.
 init([]) ->
-  {ok, Pid} = riakc_pb_socket:start_link("picard.skip.chalmers.se", 8087),
+  {ok, Pid} = riakc_pb_socket:start_link("127.0.0.1", 8087),
   {ok, Pid}.
 
 %% Here is where you can add functionaility by making another handle_call function head.
 %% Remember to include the API call in tag_riak for any functionaility you want to access
 
 handle_call(update_taglist, _From, SocketPid) ->
-	case riakc_pb_socket:get(SocketPid, <<"taglistbucket">>, <<"taglist">>) of
+	Taglist = case riakc_pb_socket:get(SocketPid, <<"taglistbucket">>, <<"taglist">>) of
         {ok, CurrentTaglist} -> 
           FinalTaglist = binary_to_term(riakc_obj:get_value(CurrentTaglist)),  
-          Taglist = jiffy:encode({[{<<"tags">>, FinalTaglist}]});
+          Taglist1 = jiffy:encode({[{<<"tags">>, FinalTaglist}]}),
+          Taglist1;
         {error,_} ->
-          Taglist = jiffy:encode({[{<<"tags">>, <<"Bad List">>}]})
+          Taglist1 = jiffy:encode({[{<<"tags">>, <<"Bad List">>}]}),
+          Taglist1
   end,
 	{reply, Taglist, SocketPid};
 
+handle_call({setkey, Data}, _From, SocketPid) ->
+	DataMap = jiffy:decode(Data, [return_maps]), 
+	%%ProfileImage
+	UserId = maps:get(<<"user_id">>, DataMap, not_found),
+	AuthKey = maps:get(<<"key">>, DataMap, not_found),
+	if AuthKey == not_found, UserId == not_found
+		-> 
+		{reply, bad_request, SocketPid};
+	true 		->
+		Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
+		if Result =:= {error, notfound} 
+				 ->     UserMap = #{}; %% put profile image
+						%% in ^ "profileimage" => ProfileImage^^
+			true -> 
+				{ok, Object} = Result,
+				UserMap = binary_to_term(riakc_obj:get_value(Object))
+		end,
+		NewUserMap = maps:put("authkey", binary_to_list(AuthKey), UserMap),
+		RiakObj = riakc_obj:new(<<"users">>, term_to_binary(UserId), NewUserMap),
+		riakc_pb_socket:put(SocketPid, RiakObj),
+		{reply, binary_to_list(AuthKey), SocketPid}
+	end;
+	%application:ensure_all_started(tw_data_server).
+	
 handle_call({testpost, TestInfo}, _From, SocketPid) ->
   {TestInfo1} = jiffy:decode(TestInfo),
-  case extract(<<"testid">>, TestInfo1) of
+  Result = case extract(<<"testid">>, TestInfo1) of
     {found, Val} -> 
       Obj = riakc_obj:new(<<"testpost">>,
         Val,
         term_to_binary(TestInfo1)),
-      Result = riakc_pb_socket:put(SocketPid, Obj);
-    not_found -> Result = bad_request
+      Result1 = riakc_pb_socket:put(SocketPid, Obj),
+      Result1;
+    not_found -> bad_request
   end, 
   {reply, Result, SocketPid};
 
 handle_call({gettag, Tag}, _From, SocketPid) ->
-  case riakc_pb_socket:get_index_range(
+  {Distribution, Cotags} = case riakc_pb_socket:get_index_range(
             SocketPid,
             <<"tags">>, %% bucket name
             {integer_index, "timestamp"}, %% index name
@@ -70,21 +97,24 @@ handle_call({gettag, Tag}, _From, SocketPid) ->
           {NewKeys,_} = lists:split(20, AllKeys),
           Objects = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, <<"tags">>, Key), Obj end, NewKeys),
           Tagset = lists:map(fun(Object) -> Value = binary_to_term(riakc_obj:get_value(Object)), case dict:find(Tag, Value) of {ok, Tagged} -> Tagged; error -> {0, sets:new(),sets:new()} end end, Objects),
-          {Distribution, Cotags} = loopThrough(Tagset, [], sets:new());
+          {Distribution1, Cotags1} = loopThrough(Tagset, [], sets:new()),
+          {Distribution1, Cotags1};
         (length(AllKeys) >= 2) and (length(AllKeys) rem 2 =:= 0) ->
           Objects = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, <<"tags">>, Key), Obj end, AllKeys),
           Tagset = lists:map(fun(Object) -> Value = binary_to_term(riakc_obj:get_value(Object)), case dict:find(Tag, Value) of {ok, Tagged} -> Tagged; error -> {0, sets:new(),sets:new()} end end, Objects),
-          {Distribution, Cotags} = loopThrough(Tagset, [], sets:new());
+          {Distribution1, Cotags1} = loopThrough(Tagset, [], sets:new()),
+          {Distribution1, Cotags1};
         length(AllKeys) >= 2 ->
           [_|NewKeys] = AllKeys,
           Objects = lists:map(fun(Key) -> {ok, Obj} = riakc_pb_socket:get(SocketPid, <<"tags">>, Key), Obj end, NewKeys),
           Tagset = lists:map(fun(Object) -> Value = binary_to_term(riakc_obj:get_value(Object)), case dict:find(Tag, Value) of {ok, Tagged} -> Tagged; error -> {0, sets:new(),sets:new()} end end, Objects),
-          {Distribution, Cotags} = loopThrough(Tagset, [], sets:new());
+          {Distribution1, Cotags1} = loopThrough(Tagset, [], sets:new()),
+          {Distribution1, Cotags1};
         true ->
-          {Distribution, Cotags} = {[{[{<<"numtags">>, 0}, {<<"tweets">>, ""}]}],[]}
+          {[{[{<<"numtags">>, 0}, {<<"tweets">>, ""}]}],[]}
       end;
     {error, _} ->
-      {Distribution, Cotags} = {[{[{<<"numtags">>, 0}, {<<"tweets">>, ""}]}],[]}
+      {[{[{<<"numtags">>, 0}, {<<"tweets">>, ""}]}],[]}
   end,
   Response = jiffy:encode({[{<<"tag">>, Tag},
   {<<"cotags">>, Cotags},
