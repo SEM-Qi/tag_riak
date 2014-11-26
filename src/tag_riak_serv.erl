@@ -1,6 +1,6 @@
 -module(tag_riak_serv).
 -behaviour(gen_server).
-
+%% ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
 %% ------------------------------------------------------------------
 %% API Function Exports
 %% ------------------------------------------------------------------
@@ -28,7 +28,7 @@ start_link() ->
 
 %% Starts a link to riak, stores it in state.
 init([]) ->
-  {ok, Pid} = riakc_pb_socket:start_link("picard.skip.chalmers.se", 8087),
+  {ok, Pid} = riakc_pb_socket:start_link("127.0.0.1", 8087),
   {ok, Pid}.
 
 %% Here is where you can add functionaility by making another handle_call function head.
@@ -46,6 +46,63 @@ handle_call(update_taglist, _From, SocketPid) ->
   end,
 	{reply, Taglist, SocketPid};
 
+%handle_call({setkey, Data}, _From, SocketPid) ->
+%	DataMap = jiffy:decode(Data, [return_maps]), 
+	%%ProfileImage
+%	UserId = maps:get(<<"user_id">>, DataMap, not_found),
+%	AuthKey = maps:get(<<"key">>, DataMap, not_found),
+%	if AuthKey == not_found, UserId == not_found
+%		-> 
+%		{reply, bad_request, SocketPid};
+%	true 		->
+%		Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
+%		if Result =:= {error, notfound} 
+%				 ->     UserMap = #{}; %% put profile image
+						%% in ^ "profileimage" => ProfileImage^^
+%			true -> 
+%				{ok, Object} = Result,
+%				UserMap = binary_to_term(riakc_obj:get_value(Object))
+%		end,
+%		NewUserMap = maps:put("authkey", binary_to_list(AuthKey), UserMap),
+%		RiakObj = riakc_obj:new(<<"users">>, term_to_binary(UserId), NewUserMap),
+%		riakc_pb_socket:put(SocketPid, RiakObj),
+%		{reply, binary_to_list(AuthKey), SocketPid}
+%	end;
+	%application:ensure_all_started(tw_data_server).
+
+handle_call({setkey, Data}, _From, SocketPid) ->
+	DataMap = jiffy:decode(Data, [return_maps]), 
+	%%ProfileImage
+	UserId = case extract(<<"user_id">>, TestInfo1) of			
+	 not_found ->  
+		{reply, bad_request, SocketPid};
+	true 		->
+		Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
+		if Result =:= {error, notfound} 
+				 ->     
+				 Object = riakc_obj:new(<<"users">>, term_to_binary(UserId), <<"">>), 
+				 %create a new key + values for it Ill add them later
+			true -> 
+				{ok, Object} = Result,
+				User = binary_to_term(riakc_obj:get_value(Object))
+		end,
+		NewUser = riakc_obj:update_value(SocketPid, binary_to_list(AuthKey), binary_to_list(riakc_obj:get_value(Object)),
+		RiakObj = riakc_obj:new(<<"users">>, term_to_binary(UserId), NewUser),
+		riakc_pb_socket:put(SocketPid, RiakObj),
+		{reply, binary_to_list(AuthKey), SocketPid};
+	
+	end;
+	 
+	%application:ensure_all_started(tw_data_server).
+
+handle_call({getuserinfo, Data}, _From, SocketPid) ->
+	DataMap = jiffy:decode(Data, [return_maps]), 
+	UserId = maps:get(<<"user_id">>, DataMap, not_found),
+	AuthKey = maps:get(<<"key">>, DataMap, not_found),
+	
+	%application:ensure_all_started(tw_data_server).
+
+	
 handle_call({testpost, TestInfo}, _From, SocketPid) ->
   {TestInfo1} = jiffy:decode(TestInfo),
   Result = case extract(<<"testid">>, TestInfo1) of
