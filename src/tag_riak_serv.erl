@@ -1,6 +1,6 @@
 -module(tag_riak_serv).
 -behaviour(gen_server).
-%% ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+
 %% ------------------------------------------------------------------
 %% API Function Exports
 %% ------------------------------------------------------------------
@@ -72,7 +72,7 @@ handle_call(update_taglist, _From, SocketPid) ->
 
 handle_call({setkey, Data}, _From, SocketPid) ->
 	DataMap = jiffy:decode(Data, [return_maps]), 
-	%%ProfileImage
+	ProfileImg = extract(<<"profile_image_url">>, TestInfo1), 
 	UserId = case extract(<<"user_id">>, TestInfo1) of			
 	 not_found ->  
 		{reply, bad_request, SocketPid};
@@ -80,8 +80,7 @@ handle_call({setkey, Data}, _From, SocketPid) ->
 		Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
 		if Result =:= {error, notfound} 
 				 ->     
-				 Object = riakc_obj:new(<<"users">>, term_to_binary(UserId), <<"">>), 
-				 %create a new key + values for it Ill add them later
+				 Object = riakc_obj:new(<<"users">>, term_to_binary(UserId), term_to_binary(ProfileImg)), 
 			true -> 
 				{ok, Object} = Result,
 				User = binary_to_term(riakc_obj:get_value(Object))
