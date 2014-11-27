@@ -3,7 +3,7 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 %% Interface callbacks
--export([connect/0, tag_attack/2, update_taglist/1, getreply/0, close_server/1, test_post/2]).
+-export([connect/0, tag_attack/2, update_taglist/1, getreply/0, close_server/1, test_post/2, getuserinfo/2, setkey/2, authorize/2]).
 % -export([get_player_info/1, new_player/1, update_player_info/1]).
 
 %% ===================================================================
@@ -37,6 +37,15 @@ getreply() ->
 
 test_post(Pid, Val) ->
 	gen_server:call(Pid, {testpost, Val}).
+
+getuserinfo(Pid, Val) ->
+	gen_server:call(Pid, {getuserinfo, Val}).
+
+setkey(Pid, Val) ->
+	gen_server:call(Pid, {setkey, Val}).
+	
+authorize(Pid, Val) ->
+	gen_server:call(Pid, {authorize, Val}).
 
 % get_player_info(Player) -> 
 % 	gen_server:call(,Tag)

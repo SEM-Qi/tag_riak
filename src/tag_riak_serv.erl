@@ -71,11 +71,11 @@ handle_call(update_taglist, _From, SocketPid) ->
 	%application:ensure_all_started(tw_data_server).
 
 handle_call({setkey, Data}, _From, SocketPid) ->
-	Data1 = jiffy:decode(Data), 
-	AuthKey = extract(<<"key">>, Data1),
-	ProfileImg = extract(<<"profile_image_url">>, Data1), 
-	ScreenName = extract(<<"screen_name">>, Data1),
-	UserId = extract(<<"user_id">>, Data1),
+  {Data1} = jiffy:decode(Data),
+  {found, AuthKey} = extract(<<"key">>, Data1),
+  {found, ProfileImg} = extract(<<"profile_image_url">>, Data1),
+  {found, ScreenName} = extract(<<"screen_name">>, Data1),
+  {found, UserId} = extract(<<"user_id">>, Data1),
   if UserId =:= not_found
     ->
 		{reply, bad_request, SocketPid};
@@ -87,27 +87,51 @@ handle_call({setkey, Data}, _From, SocketPid) ->
 					MostUsed = [];
 		   true ->
 					{ok, Object} = OldUserData,
-					Value = riakc_obj:get_value(Object),
+					Value = binary_to_term(riakc_obj:get_value(Object)),
 					LastTags = lists:keyfind(last_tags, 1, Value),
 					MostUsed = lists:keyfind(most_used, 1, Value)
 		end,
 				
     NewUser = [{auth_key, AuthKey}, {profile_image_url, ProfileImg}, {screen_name, ScreenName}, {last_tags, LastTags}, {most_used, MostUsed}], %[{auth_key, "r12312312312312313"}, {profile_img, "http:aadasd/dsad"}, {screen_name, "durak"}]
-		RiakObj = riakc_obj:new(<<"users">>, term_to_binary(UserId), term_to_binary(NewUser)),
+		RiakObj = riakc_obj:new(<<"users">>, integer_to_binary(UserId), term_to_binary(NewUser)),
 		riakc_pb_socket:put(SocketPid, RiakObj),
 		{reply, binary_to_list(AuthKey), SocketPid}
 	end;
-	
-	
+
+
+handle_call({authorize, RawData}, _From, SocketPid) ->
+  {Data} = jiffy:decode(RawData),
+  {found, AuthKey} = extract(<<"auth_key">>, Data),
+  {found, UserId} = extract(<<"user_id">>, Data),
+  Result = riakc_pb_socket:get(SocketPid, <<"users">>, UserId),
+  {ok, Object} = Result,
+  RetrievedValues = riakc_obj:get_value(Object),
+  {_, Key} = lists:keyfind(auth_key, 1, binary_to_term(RetrievedValues)),
+  io:format("~p ~p ~n", [Key, AuthKey]),
+  if AuthKey =:= Key
+         ->
+     {reply, "true", SocketPid};
+    true ->
+      {reply, bad_request, SocketPid}
+   end;
+
 handle_call({getuserinfo, RawData}, _From, SocketPid) ->
-	Data = jiffy:decode(RawData),
-	UserId = extract(<<"user_id">>, Data),
+  {Data} = jiffy:decode(RawData),
+  {found, RawUserId} = extract(<<"user_id">>, Data),
+  UserId = list_to_integer(binary_to_list(RawUserId)),
   if UserId =:= not_found
     ->
 			{reply, bad_request, SocketPid};
 		true 		->
-			Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
-      {reply, jiffy:encode(binary_to_list(Result)), SocketPid}
+      Result = riakc_pb_socket:get(SocketPid, <<"users">>, integer_to_binary(UserId)),
+      if Result =:= {error, notfound}
+        ->
+          {reply, bad_request, SocketPid};
+        true ->
+          {ok, Object} = Result,
+          RetrievedValues = riakc_obj:get_value(Object),
+          {reply, jiffy:encode({binary_to_term(RetrievedValues)}), SocketPid}
+        end
     end;
 			%application:ensure_all_started(tw_data_server).
 
