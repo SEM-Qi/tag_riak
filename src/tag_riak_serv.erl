@@ -72,65 +72,57 @@ handle_call(update_taglist, _From, SocketPid) ->
 
 handle_call({setkey, Data}, _From, SocketPid) ->
 	Data1 = jiffy:decode(Data), 
+	AuthKey = extract(<<"key">>, Data1),
 	ProfileImg = extract(<<"profile_image_url">>, Data1), 
-	UserId = case extract(<<"user_id">>, Data1) of			
-	 not_found ->  
+	ScreenName = extract(<<"screen_name">>, Data1),
+	UserId = extract(<<"user_id">>, Data1),
+  if UserId =:= not_found
+    ->
 		{reply, bad_request, SocketPid};
-	true 		->
-		Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
-		if Result =:= {error, notfound} 
-				->     
-				 ValueStructure = {{auth_key, empty}, {profile_img, empty}, {screen_name, empty}},
-				 Object = riakc_obj:new(<<"users">>, term_to_binary(UserId), term_to_binary(ValueStructure)), 
-		   true -> 
-				{ok, Object} = Result,
-				User = binary_to_term(riakc_obj:get_value(Object))
+	 true 		->
+		OldUserData = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
+		if OldUserData =:= {error, notfound}
+				-> 
+					LastTags = [],
+					MostUsed = [];
+		   true ->
+					{ok, Object} = OldUserData,
+					Value = riakc_obj:get_value(Object),
+					LastTags = lists:keyfind(last_tags, 1, Value),
+					MostUsed = lists:keyfind(most_used, 1, Value)
 		end,
-		
-		%{{auth_key, "r12312312312312313"}, {profile_img, "http:aadasd/dsad"}, {screen_name, "durak"}}
-		
-		DeletedAuthKey = [{auth_key, Value, User}	 | lists:keydelete(auth_key, 1, User)],
-		DeletedImg 	   = [{profile_img, Value, User} | lists:keydelete(profile_img, 1, User)],
-		DeletedName    = [{screen_name, Value, User} | lists:keydelete(screen_name, 1, User)],
-		NewList 	   = DeletedImg ++ DeletedName ++ DeletedAuthKey,    
-              
-		NewUser = riakc_obj:update_value(Result, binary_to_list(NewList)),
-		RiakObj = riakc_obj:new(<<"users">>, term_to_binary(UserId), NewUser),
+				
+    NewUser = [{auth_key, AuthKey}, {profile_image_url, ProfileImg}, {screen_name, ScreenName}, {last_tags, LastTags}, {most_used, MostUsed}], %[{auth_key, "r12312312312312313"}, {profile_img, "http:aadasd/dsad"}, {screen_name, "durak"}]
+		RiakObj = riakc_obj:new(<<"users">>, term_to_binary(UserId), term_to_binary(NewUser)),
 		riakc_pb_socket:put(SocketPid, RiakObj),
-		{reply, binary_to_list(AuthKey), SocketPid};
-	
+		{reply, binary_to_list(AuthKey), SocketPid}
 	end;
 	
-	Value = {
-	{auth_key, "r12312312312312313"}, {profile_img, "http:aadasd/dsad"}, {screen_name, "durak"}
-	}
-	{_, {profile_img, Img}, _} = get_value();
 	
-	
-	%application:ensure_all_started(tw_data_server).
-
-handle_call({getuserinfo, Data}, _From, SocketPid) ->
-	DataMap = jiffy:decode(Data, [return_maps]), 
-	UserId = case extract(<<"user_id">>, TestInfo1) of		
-		not_found ->  
+handle_call({getuserinfo, RawData}, _From, SocketPid) ->
+	Data = jiffy:decode(RawData),
+	UserId = extract(<<"user_id">>, Data),
+  if UserId =:= not_found
+    ->
 			{reply, bad_request, SocketPid};
 		true 		->
 			Result = riakc_pb_socket:get(SocketPid, <<"users">>, term_to_binary(UserId)),
-			{reply, binary_to_list(Result), SocketPid};
-	%application:ensure_all_started(tw_data_server).
+      {reply, jiffy:encode(binary_to_list(Result)), SocketPid}
+    end;
+			%application:ensure_all_started(tw_data_server).
 
 	
 handle_call({testpost, TestInfo}, _From, SocketPid) ->
   {TestInfo1} = jiffy:decode(TestInfo),
   Result = case extract(<<"testid">>, TestInfo1) of
-    {found, Val} -> 
+    {found, Val} ->
       Obj = riakc_obj:new(<<"testpost">>,
         Val,
         term_to_binary(TestInfo1)),
       Result1 = riakc_pb_socket:put(SocketPid, Obj),
       Result1;
     not_found -> bad_request
-  end, 
+  end,
   {reply, Result, SocketPid};
 
 handle_call({gettag, Tag}, _From, SocketPid) ->
@@ -170,7 +162,7 @@ handle_call({gettag, Tag}, _From, SocketPid) ->
   {<<"cotags">>, Cotags},
   {<<"distribution">>, 
     Distribution}]}),
-
+    
 {reply, Response, SocketPid}.
 
 handle_cast(terminate, State) ->
