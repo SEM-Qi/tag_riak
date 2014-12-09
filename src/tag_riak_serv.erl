@@ -65,7 +65,7 @@ handle_call({gettag, Tag}, _From, SocketPid) ->
           FinalTagAttack = binary_to_term(riakc_obj:get_value(TagAttack)),  
           FinalTagAttack;
         {error,_} ->
-          {Distribution, Cotags} = {[{[{<<"numtags">>, 0}, {<<"tweets">>, ""}]}],[]}
+          {Distribution, Cotags} = {[{[{<<"numtags">>, 0}, {<<"tweets">>, ""}]}],[]},
           Response1 = jiffy:encode({[{<<"tag">>, Tag}, 
             {<<"cotags">>, Cotags},
             {<<"distribution">>, Distribution}]}),
