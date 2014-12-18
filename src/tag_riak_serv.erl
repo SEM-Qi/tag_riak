@@ -69,7 +69,8 @@ handle_call({authorize, Data}, _From, {SocketPid, Rest}) ->
   {ok, Object} = Result,
   RetrievedValues = riakc_obj:get_value(Object),
   {_, Key} = lists:keyfind(auth_key, 1, binary_to_term(RetrievedValues)),
-  if AuthKey =:= Key
+  NewAuthKey = binary_to_list(AuthKey),
+  if NewAuthKey =:= Key
     ->
     {reply, "true", {SocketPid, Rest}};
     true ->
