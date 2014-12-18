@@ -35,11 +35,17 @@ tag_attack(Pid, Tag) ->
 update_taglist(Pid) -> 
 	gen_server:call(Pid, update_taglist).
 
-getreply() ->
-	gen_server:call(tag_riak_refserv, reply).
+getuserinfo(Pid, Val) ->
+	gen_server:call(Pid, {getuserinfo, Val}).
 
-test_post(Pid, Val) ->
-	gen_server:call(Pid, {testpost, Val}).
+setkey(Pid, Val) ->
+	gen_server:call(Pid, {setkey, Val}).
+
+authorize(Pid, Val) ->
+	gen_server:call(Pid, {authorize, Val}).
+
+updatekey(Pid, Val) ->
+	gen_server:call(Pid, {updatekey, Val}).
 
 % get_player_info(Player) -> 
 % 	gen_server:call(,Tag)
