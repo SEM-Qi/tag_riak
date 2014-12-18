@@ -10,12 +10,10 @@ start_link() ->
 
 
 init([]) ->
-    % {ok, Hostname} = inet:gethostname(),
-    % {ok,{hostent,FullHostname,[_],inet,_,[_]}} = inet:gethostbyname(Hostname),
-    {ok, RiakPID} = riakc_pb_socket:start_link("picard.skip.chalmers.se", 8087),
-    {ok,{"picard.skip.chalmers.se", RiakPID}}.
- %    {ok, RiakPID} = riakc_pb_socket:start_link(FullHostname, 8087),
-	% {ok,{FullHostname, RiakPID}}.
+    {ok, Hostname} = inet:gethostname(),
+    {ok,{hostent,FullHostname,[_],inet,_,[_]}} = inet:gethostbyname(Hostname),
+    {ok, RiakPID} = riakc_pb_socket:start_link(FullHostname, 8087),
+	{ok,{FullHostname, RiakPID}}.
 
 handle_call({connect, no_player}, _From, {Hostname, RiakPID}) ->
     {ok, Pid} = supervisor:start_child(tag_riak_sup, [{Hostname, no_key}]),
