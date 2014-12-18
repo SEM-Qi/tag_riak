@@ -19,8 +19,8 @@
 %% ------------------------------------------------------------------
 
 %Where Pid is the pid of the requesting process (hopefully)
-start_link([Hostname, Key]) ->
-  gen_server:start_link(?MODULE, [Hostname, Key], []).
+start_link(Args) ->
+  gen_server:start_link(?MODULE, Args, []).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
