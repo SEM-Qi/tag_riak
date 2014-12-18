@@ -5,7 +5,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0]).
+-export([start_link/2]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -19,8 +19,8 @@
 %% ------------------------------------------------------------------
 
 %Where Pid is the pid of the requesting process (hopefully)
-start_link() ->
-  gen_server:start_link(?MODULE, [], []).
+start_link([Hostname, Key]) ->
+  gen_server:start_link(?MODULE, [Hostname, Key], []).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
