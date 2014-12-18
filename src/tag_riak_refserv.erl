@@ -29,6 +29,9 @@ handle_call({connect, Player}, _From, {Hostname, RiakPID}) ->
                     CheckPid;
                 false ->
                     riakc_pb_socket:delete(RiakPID, <<"session">>, Key),
+                    start_server(Player, Hostname, RiakPID);
+                {badarg,_} -> 
+                    riakc_pb_socket:delete(RiakPID, <<"session">>, Key),
                     start_server(Player, Hostname, RiakPID)
             end;
         {error,notfound} ->
