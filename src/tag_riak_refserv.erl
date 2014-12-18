@@ -16,7 +16,7 @@ init([]) ->
 	{ok,{FullHostname, RiakPID}}.
 
 handle_call({connect, no_player}, _From, {Hostname, RiakPID}) ->
-    {ok, Pid} = supervisor:start_child(tag_riak_sup, [Hostname, no_key]),
+    {ok, Pid} = supervisor:start_child(tag_riak_sup, [{Hostname, no_key}]),
     {reply, Pid, {Hostname, RiakPID}};
 
 handle_call({connect, Player}, _From, {Hostname, RiakPID}) ->
@@ -50,7 +50,7 @@ terminate(_Reason, _State) ->
 
 start_server(Player, Hostname, RiakPID) -> 
     Key = iolist_to_binary([Player, Hostname]),
-    {ok, NewPid} = supervisor:start_child(tag_riak_sup, [Hostname, Key]),
+    {ok, NewPid} = supervisor:start_child(tag_riak_sup, [{Hostname, Key}]),
     Object = riakc_obj:new(<<"session">>, Key, term_to_binary(NewPid)),
     riakc_pb_socket:put(RiakPID, Object),
     NewPid.

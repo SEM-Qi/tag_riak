@@ -20,14 +20,14 @@
 
 %Where Pid is the pid of the requesting process (hopefully)
 start_link(Args) ->
-  gen_server:start_link(?MODULE, [Args], []).
+  gen_server:start_link(?MODULE, Args, []).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
 %% Starts a link to riak, stores it in state.
-init([Hostname, Key]) ->
+init({Hostname, Key}) ->
   Self = self(),
   spawn_link(fun() -> timer:sleep(3600000), supervisor:terminate_child(tag_riak_sup, Self) end),
   {ok, Pid} = riakc_pb_socket:start_link(Hostname, 8087),
