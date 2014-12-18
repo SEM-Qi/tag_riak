@@ -3,7 +3,7 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 %% Interface callbacks
--export([connect/0, tag_attack/2, update_taglist/1, getreply/0, close_server/1, test_post/2]).
+-export([connect/0, connect/1, tag_attack/2, update_taglist/1, getreply/0, close_server/1, test_post/2]).
 % -export([get_player_info/1, new_player/1, update_player_info/1]).
 
 %% ===================================================================
@@ -24,7 +24,10 @@ stop(_State) ->
 
 
 connect() ->
-	tag_riak_refserv:connect().
+	gen_server:call(tag_riak_refserv, {connect, no_player}).
+
+connect(Player) ->
+	gen_server:call(tag_riak_refserv, {connect, Player}).
 
 tag_attack(Pid, Tag) -> 
 	gen_server:call(Pid, {gettag, Tag}).
