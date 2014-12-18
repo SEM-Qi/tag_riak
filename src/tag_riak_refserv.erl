@@ -10,8 +10,8 @@ start_link() ->
 
 
 init([]) ->
-    {ok, Hostname} = inet:gethostname(),
-    {ok,{hostent,FullHostname,[_],inet,_,[_]}} = inet:gethostbyname(Hostname),
+    % {ok, Hostname} = inet:gethostname(),
+    % {ok,{hostent,FullHostname,[_],inet,_,[_]}} = inet:gethostbyname(Hostname),
     {ok, RiakPID} = riakc_pb_socket:start_link("picard.skip.chalmers.se", 8087),
     {ok,{"picard.skip.chalmers.se", RiakPID}}.
  %    {ok, RiakPID} = riakc_pb_socket:start_link(FullHostname, 8087),
