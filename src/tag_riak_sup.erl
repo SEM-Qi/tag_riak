@@ -1,3 +1,8 @@
+%% ------------------------------------------------------------------
+%% tag_riak_sup is an OTP supervisor. It starts the worker tag_riak_serv dynamically as requested. 
+%% It supervises each server and will terminate a child by pid reference when requested
+%% ------------------------------------------------------------------
+
 -module(tag_riak_sup).
 -export([start_link/0, init/1]).
 -behaviour(supervisor).
@@ -15,7 +20,3 @@ init([]) ->
             {tag_riak_serv,start_link,[]},
             transient, 5000, worker, [tag_riak_serv]}]}}.
 
-
-
-
-%%% Need to make a redundancy plan. When super goes down, started with the info from refserver? or just force to reconnect?

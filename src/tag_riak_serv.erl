@@ -1,3 +1,11 @@
+%% ------------------------------------------------------------------
+%% tag_riak_serv is a dynamically generated OTP gen_server that handles all 
+%% riak requests and returns or sets data as applicable. 
+%% To keep memory leaks to a minumum and maximise fault tolerance, each server handles 
+%% its own riak connection and only handles requests from one client
+%% ------------------------------------------------------------------
+
+
 -module(tag_riak_serv).
 -behaviour(gen_server).
 
@@ -18,7 +26,7 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-%Where Pid is the pid of the requesting process (hopefully)
+
 start_link(Args) ->
   gen_server:start_link(?MODULE, Args, []).
 
@@ -26,15 +34,15 @@ start_link(Args) ->
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-%% Starts a link to riak, stores it in state.
+%% Starts a link to local riak node, stores it in state.
+
 init({Hostname, Key}) ->
   Self = self(),
-  spawn_link(fun() -> timer:sleep(86400000), supervisor:terminate_child(tag_riak_sup, Self) end),
+  spawn_link(fun() -> timer:sleep(3600000), supervisor:terminate_child(tag_riak_sup, Self) end),
   {ok, Pid} = riakc_pb_socket:start_link(Hostname, 8087),
   {ok, {Pid, Key}}.
 
-%% Here is where you can add functionaility by making another handle_call function head.
-%% Remember to include the API call in tag_riak for any functionaility you want to access
+%% Handles requests for  the available taglist
 
 handle_call(update_taglist, _From, {SocketPid, Rest}) ->
 	Taglist = case riakc_pb_socket:get(SocketPid, <<"taglistbucket">>, <<"taglist">>) of
@@ -47,6 +55,8 @@ handle_call(update_taglist, _From, {SocketPid, Rest}) ->
           Taglist1
   end,
 	{reply, Taglist, {SocketPid, Rest}};
+
+%% Handles requests for tag distribution data (most frequent call)
 
 handle_call({gettag, Tag}, _From, {SocketPid, Rest}) ->
   Response = case riakc_pb_socket:get(SocketPid, <<"formattedtweets">>, Tag) of
@@ -61,6 +71,8 @@ handle_call({gettag, Tag}, _From, {SocketPid, Rest}) ->
           Response1
   end,
 {reply, Response, {SocketPid, Rest}};
+
+%% Handles Authorization queries, returns true or false depending on key match
 
 handle_call({authorize, Data}, _From, {SocketPid, Rest}) ->
   {found, AuthKey} = extract(<<"auth_key">>, Data),
@@ -77,6 +89,8 @@ handle_call({authorize, Data}, _From, {SocketPid, Rest}) ->
       {reply, "false", {SocketPid, Rest}}
   end;
 
+%% Handles user information queries
+
 handle_call({getuserinfo, RawData}, _From, {SocketPid, Rest}) ->
   {Data} = jiffy:decode(RawData),
   {found, RawUserId} = extract(<<"user_id">>, Data),
@@ -92,12 +106,13 @@ handle_call({getuserinfo, RawData}, _From, {SocketPid, Rest}) ->
         true ->
           {ok, Object} = Result,
           RetrievedValues = binary_to_term(riakc_obj:get_value(Object)),
-          %%  io:format("~p ~n", [RetrievedValues]),
           {reply, jiffy:encode({RetrievedValues}), {SocketPid, Rest}}
       end
   end;
 
-%% Theres no point in checking if UserID exists because this step is happening after the log in
+%% Updates the auth key data. 
+
+
 handle_call({updatekey, Data}, _From, {SocketPid, Rest}) ->
   {found, NewAuthKey} = extract(<<"auth_key">>, Data),
   {found, UserIdInGame} = extract(<<"user_id">>, Data),
@@ -116,9 +131,9 @@ handle_call({updatekey, Data}, _From, {SocketPid, Rest}) ->
   riakc_pb_socket:put(SocketPid, RiakObj),
   {reply, NewAuthKey, {SocketPid, Rest}};
 
+%% Sets the Auth key The key is generated on twitter sign in.
 
 handle_call({setkey, Data}, _From, {SocketPid, Rest}) ->
-%%   io:format("~p ~n", [Data]),
   {found, AuthKey} = extract(<<"key">>, Data),
   {found, ProfileImg} = extract(<<"profile_image_url">>, Data),
   {found, ScreenName} = extract(<<"screen_name">>, Data),
@@ -146,6 +161,7 @@ handle_call({setkey, Data}, _From, {SocketPid, Rest}) ->
       {reply, binary_to_list(AuthKey), {SocketPid, Rest}}
   end.
 
+%% Required callbacks
 
 handle_cast(terminate, State) ->
   {noreply, State}.

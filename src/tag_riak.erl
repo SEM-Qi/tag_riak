@@ -1,15 +1,32 @@
+
+%% ------------------------------------------------------------------
+%% tag_riak is an OTP application that handles all riak based querys for 
+%% tw_data_server (or other application or erlang process, it is standalone),
+%% it exposes the below APIs when running.
+%% ------------------------------------------------------------------
+
+
 -module(tag_riak).
 -behaviour(application).
-%% Application callbacks
+
+%% ------------------------------------------------------------------
+%% API Function Exports
+%% ------------------------------------------------------------------
+
 -export([start/2, stop/1]).
-%% Interface callbacks
+
+%% ------------------------------------------------------------------
+%% Interface Function Exports
+%% ------------------------------------------------------------------
+
 -export([connect/0, connect/1, tag_attack/2, update_taglist/1, 
 	close_server/1,getuserinfo/2, setkey/2, updatekey/2, authorize/2]).
-% -export([get_player_info/1, new_player/1, update_player_info/1]).
+
 
 %% ===================================================================
 %% Application callbacks
 %% ===================================================================
+
 start(normal, _Args) ->
     tag_riak_top:start_link().
 
@@ -48,16 +65,8 @@ authorize(Pid, Val) ->
 updatekey(Pid, Val) ->
 	gen_server:call(Pid, {updatekey, Val}).
 
-% get_player_info(Player) -> 
-% 	gen_server:call(,Tag)
-
-% new_player(Player_info_object) -> 
-% 	gen_server:call(,Tag)
-
-% update_player_info(Player_info_object) -> 
-% 	gen_server:call(,Tag)
-
 close_server(Pid) ->
 	supervisor:terminate_child(tag_riak_sup, Pid),
 	ok.
+
 

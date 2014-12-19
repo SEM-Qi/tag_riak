@@ -1,12 +1,16 @@
+%% ------------------------------------------------------------------
+%% tag_riak_top is an OTP supervisor that sits at the top of the supervisor tree. 
+%% It starts all permanent processes in its init stage and supervises themn. 
+%% These processes are registered and should never die (i.e. will be restarted). 
+%% ------------------------------------------------------------------
+
 -module(tag_riak_top).
 -behaviour(supervisor).
+
 -export([start_link/0]).
 -export([init/1]).
 
-%Start tag_war_top as tag_riak:startlink().
-%
 
-%% Could also make this name global (this level only, in a multi node situation maybe?
 start_link() ->
   supervisor:start_link({local, tag_riak_top}, ?MODULE, []).
 

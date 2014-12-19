@@ -1,10 +1,10 @@
 # Server to Riak Interface
 
-## This is Team QI's Riak interface layer, sitting between the data server and Riak.
+## This is Team QI's Riak interface layer, sitting between the data server and Riak. Designed to be started as a dependency of tw_data_server but can be run as a standalone app
 
 ### Installation
 
-* Please note. This installation procedure may not have been implemented yet. This is only valid for unix-like systems. You will need `make` and `git` on your system.
+*This is only valid for unix-like systems. You will need `make` and `git` on your system.
 
 Start by cloning the repository:
 
@@ -23,8 +23,9 @@ There should be a long output as the project builds. Once it is finished enter t
 When you make changes you can run `make` again to rebuild.
 
 ### Current API calls
-
-	tag_riak:connect().  
+	
+	tag_riak:connect() or if playerid known
+	tag_riak:connect(Player)
 
 	%% Returns a Pid of a server that will handle actual riak operations
 
@@ -36,14 +37,31 @@ When you make changes you can run `make` again to rebuild.
 
 	%% Where Pid is the Pid returned in connect(). Returns JSON object with list of tags
 
-	tag_riak:test_post(Pid).
+	getuserinfo(Pid, Val) ->
+	
+	%% Get user Info
 
-	%% Where Pid is the Pid returned in connect(). Handles posting data, returns ok if successful
+	setkey(Pid, Val) ->
+	
+	%% Get Auth Key
+
+	authorize(Pid, Val) ->
+	
+	%% Check for Authorization
+
+	updatekey(Pid, Val) ->
+	
+	%% Update the Auth Key
+
+	close_server(Pid) ->
+	
+	%%  Gracefully close worker server
 
 
 ## Dependencies
 
 ### [riakc](https://github.com/basho/riak-erlang-client)
+#### [jiffy](https://github.com/davisp/jiffy)
 
 An erlang riak client.
 
